@@ -4,7 +4,7 @@ var offer = null;
 var localstream = null;
 var sdpConstraints = {
 	'mandatory': {
-		'OfferToReceiveAudio':true,
+		'OfferToReceiveAudio':false,
 		'OfferToReceiveVideo':true
 }};
 var pc_config = {"iceServers": [{"url": "stun:23.21.150.121"}]};
@@ -19,7 +19,7 @@ function roulette() {
 		message("getUserMedia not supported by your browser");
 		return;
 	}
-	var constraints = {"audio": false, "video": true};
+	var constraints = { "audio": false, "video": true };
     getUserMedia(constraints, localStreamConnected,
         function() {
           message("error accessing video capture device");
@@ -29,11 +29,7 @@ function roulette() {
 
 function wsURI(rel) {
 	var loc = window.location, new_uri;
-	if (loc.protocol === "https:") {
-		new_uri = "wss://";
-	} else {
-		new_uri = "ws://";
-	}
+	new_uri = loc.protocol.replace(/^http/, "ws") + "//";
 	new_uri += loc.host;
 	new_uri += loc.pathname;
 	if (loc.pathname[loc.pathname.length - 1] != "/") {
@@ -46,11 +42,15 @@ function wsURI(rel) {
 function localStreamConnected(stream) {
 	message("Local stream connected");
 	localstream = stream;
-	audioTracks = localstream.getAudioTracks();
 	if (!window.WebSocket) {
 		message("WebSocket's not supported by your browser");
 		return;
 	}
+	attachMediaStream(document.getElementById("localVideo"), stream);
+	openSocket();
+}
+
+function openSocket() {
     rouletteWS = new WebSocket(wsURI("roulette"));
     rouletteWS.onopen = webSocketConnected;
     rouletteWS.onclose = webSocketError;
@@ -68,16 +68,11 @@ function webSocketConnected() {
 		//pc.onremovestream = onRemoteStreamRemoved;
 
 		pc.addStream(localstream);
-		var constraints = {"optional": [], "mandatory": {"MozDontOfferDataChannel": true}};
+		var constraints = JSON.parse(JSON.stringify(sdpConstraints));
 		// temporary measure to remove Moz* constraints in Chrome
-		if (webrtcDetectedBrowser === "chrome") {
-			for (var prop in constraints.mandatory) {
-				if (prop.indexOf("Moz") != -1) {
-					delete constraints.mandatory[prop];
-				}
-			}
+		if (webrtcDetectedBrowser === "firefox") {
+			constraints.mandatory["MozDontOfferDataChannel"] = true;
 		}
-		constraints = mergeConstraints(constraints, sdpConstraints);
 		pc.createOffer(onOfferCreated, null, constraints);
 	} catch (e) {
 		msg = "Failed to create PeerConnection";
@@ -86,15 +81,6 @@ function webSocketConnected() {
 		}
 		message(msg);
 	}
-}
-
-function mergeConstraints(cons1, cons2) {
-  var merged = cons1;
-  for (var name in cons2.mandatory) {
-    merged.mandatory[name] = cons2.mandatory[name];
-  }
-  merged.optional.concat(cons2.optional);
-  return merged;
 }
 
 function onOfferCreated(sd) {
@@ -117,7 +103,7 @@ function onIceCandidate(evt) {
 
 function onRemoteStreamAdded(event) {
 	message("Remote stream added");
-	attachMediaStream($("#video")[0], event.stream);
+	attachMediaStream(document.getElementById("remoteVideo"), event.stream);
 }
 
 function webSocketMessage(evt) {
@@ -152,9 +138,12 @@ function webSocketClosed() {
 	if (pc) {
 		pc.close();
 		pc = null;
+		rouletteWS = null;
 	}
+	openSocket();
 }
 
 function webSocketError() {
 	message("WebSocket connection failed");
+	setTimeout(openSocket, 1000);
 }
