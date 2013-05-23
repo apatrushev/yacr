@@ -9,7 +9,7 @@ function roulette() {
 	if (!getUserMedia) {
 		message("getUserMedia not supported by your browser");
 		return;
-	};
+	}
     getUserMedia({video:true, audio:false}, localStreamConnected,
         function() {
           message("error accessing video capture device");
@@ -51,7 +51,7 @@ function webSocketConnected() {
 	var pc_config = {"iceServers": [{"url": "stun:173.194.69.127:19302"}]};
 	try {
 		pc = new RTCPeerConnection(pc_config);
-		pc.createOffer(onOffer)
+		pc.createOffer(onOffer);
 	} catch (e) {
 		msg = "Failed to create PeerConnection";
 		if (webrtcDetectedBrowser == "firefox") {
@@ -62,7 +62,7 @@ function webSocketConnected() {
 }
 
 function onOffer(sd) {
-	message("Offer created")
+	message("Offer created");
 	pc.setLocalDescription(sd);
 	rouletteWS.send(JSON.stringify(sd));
 }
