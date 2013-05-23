@@ -6,16 +6,17 @@
     <script src="static/js/adapter.js"></script>
     <script src="static/js/roulette.js"></script>
     <style>
-    #local_video {
+    #video {
       transform:rotateY(180deg);
       -webkit-transform:rotateY(180deg);
+      max-height: 480px;
+      max-width: 640px;
     }
     </style>
   </head>
   <body>
     <p id="message">Initialization</p>
-    <video id="local_video" autoplay></video>
-    <video id="remote_video" autoplay></video>
+    <video id="video" autoplay></video>
     <script type="text/javascript">
       window.onload = roulette;
     </script>
