@@ -11,7 +11,7 @@ var pc_config = {"iceServers": [{"url": "stun:23.21.150.121"}]};
 var pc_constraints = {"optional": [{"DtlsSrtpKeyAgreement": true}]};
 
 function message(text) {
-	$("#message").html(text);
+	document.getElementById("message").innerHTML = text;
 }
 
 function roulette() {
