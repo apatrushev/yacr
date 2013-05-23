@@ -1,4 +1,6 @@
 var rouletteWS = null;
+var pc = null;
+
 function message(text) {
 	$("#message").text(text);
 }
@@ -46,6 +48,23 @@ function localStreamConnected(stream) {
 function webSocketConnected() {
 	message("WebSocket connected");
 	rouletteWS.onclose = webSocketClosed;
+	var pc_config = {"iceServers": [{"url": "stun:173.194.69.127:19302"}]};
+	try {
+		pc = new RTCPeerConnection(pc_config);
+		pc.createOffer(onOffer)
+	} catch (e) {
+		msg = "Failed to create PeerConnection";
+		if (webrtcDetectedBrowser == "firefox") {
+			msg += ": go to about:config and set media.peerconnection.enabled to true";
+		}
+		message(msg);
+	}
+}
+
+function onOffer(sd) {
+	message("Offer created")
+	pc.setLocalDescription(sd);
+	rouletteWS.send(JSON.stringify(sd));
 }
 
 function webSocketClosed() {
